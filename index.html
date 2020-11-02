@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="utf-8">
+	<title>Fading History Heatmap</title>
+	<style>
+		body,
+		html {
+			margin: 0;
+			padding: 0;
+			height: 100%;
+		}
+
+		body {
+			font-family: sans-serif;
+		}
+
+		body * {
+			font-weight: 200;
+		}
+
+		/* #heatmapContainerWrapper { width:100%; height:100%; position:absolute; } */
+		/* #heatmapContainerWrapper { width:800px; height:800px; position:absolute; }  */
+		/* 25px per sensor x-point + 25px   */
+    
+    /*  (25 px * 25 cross-points) + 25px = 650px;   (25px * 13 cross-points) + 25px = 350px   */
+		/*  (25 px * 56 cross-points) + 25px = 1425px;   (25px * 15 cross-points) + 25px = 400px   */    
+		/*  (25 px * 32 cross-points) + 25px = 825px;   (25px * 32 cross-points) + 25px = 825px   */
+		/*  #heatmapContainerWrapper { width:925px; height:400px; position:absolute; }  */
+		#heatmapContainerWrapper {			
+      width: 825px;
+			height: 825px;
+      /* border: 5px solid red; */
+			position: absolute;
+		}
+
+
+		#heatmapContainer {
+			width: 100%;
+			height: 100%;
+		}
+
+		/*  this is how to make a comment in CSS section  */
+		
+	</style>
+</head>
+
+<body>
+	
+  <div id="connectButton">    
+		<button onclick="connect()">connect - transparent uart notifications</button>
+	</div>
+  
+  <div id="heatmapContainerWrapper">
+		<div id="heatmapContainer">
+		</div>
+	</div>
+
+	<script src="heatmap.js"></script>
+	<!-- <script src="/scripts/heatmap.js"></script> -->
+
+	<script>
+		// create a heatmap instance
+    var heatmap = h337.create({
+      container: document.getElementById('heatmapContainer'),
+      maxOpacity: .6,
+      radius: 50,
+      blur: .90,
+      // backgroundColor with alpha so you can see through it
+      backgroundColor: 'rgba(0, 0, 58, 0.96)'
+    });
+    var heatmapContainer = document.getElementById('heatmapContainerWrapper');
+		
+    var myCharacteristic;
+    var deviceName;    
+    var rcvString;    
+    var appendString = '';
+    
+
+    //the connect() function gets called when click the button to connect
+    function connect() 
+    {
+      let serviceUuid = "49535343-fe7d-4ae5-8fa9-9fafd205e455";
+      let characteristicUuid = "49535343-1e4d-4bd9-ba61-23c647249616";  
+
+      navigator.bluetooth.requestDevice({filters: [{services: [serviceUuid]}]})
+      .then(device => {
+        //log('Connecting...');
+        deviceName = device.name;
+        return device.gatt.connect();
+      })
+      .then(server => {
+        console.log('Getting Service...');
+        return server.getPrimaryService(serviceUuid);
+      })
+      .then(service => {
+        console.log('Getting Characteristic...');
+        return service.getCharacteristic(characteristicUuid);
+      })
+      .then(characteristic => {
+        myCharacteristic = characteristic;
+        return myCharacteristic.startNotifications().then(_ => {
+          console.log('> Notifications started');
+          //log("Connected to: " + deviceName);
+          myCharacteristic.addEventListener('characteristicvaluechanged',
+              handleNotifications);
+        });
+      })
+      .catch(error => {
+        console.log('Argh! ' + error);
+      });
+    }
+
+    function disconnect() 
+    {
+      if (myCharacteristic) 
+      {
+        myCharacteristic.stopNotifications()
+        .then(_ => {
+          console.log('> Notifications stopped');
+          //log("Disconnected")
+          myCharacteristic.removeEventListener('characteristicvaluechanged',
+              handleNotifications);
+        })
+        .catch(error => {
+          console.log('Argh! ' + error);
+        });
+      }
+    }
+
+    function handleNotifications(event) 
+    {
+      let value = event.target.value;
+      rcvString = new TextDecoder().decode(value);      
+      
+      console.log(' Received: ' + rcvString);
+      
+        //rcvString is the string of JSONish data....
+        //prob do a string search... or just to a deal to make an array of strings with the { and } being the delimeters/separators to will get an array of x,y,z pairs, which is perfect for heatmaps.js
+
+      
+      appendString += rcvString;      
+      console.log('rcvString appended to appendString.  appendString is now:   ' + appendString);      
+
+      //call the function to parse in the rcvString data and populate the heatmap
+      processData();
+
+    }
+
+    var processString;
+    var x_mapped = 0;
+		var y_mapped = 0;
+		var value_mapped = 0;
+		var radius_mapped = 0;
+		var max = 0;
+		var point_array = [];
+    
+    function processData()
+    {
+      //processString = appendString;  //copy the append string over to the process string for running thru processing
+      //processString = appendString.replace(//[/g, '');  //replaces all occurances of "["
+      //processString = processString.replace(//]/g, '');  //replaces all occurances of "]"
+      //processString = processString.replace(//{/g, '');  //replaces all occurances of "{"
+      //processString = processString.replace(//}/g, '');  //replaces all occurances of "}"
+
+      processString = appendString.replaceAll('[', '');  //replaces all occurances of "["
+      //clears the appendString for next notification:
+      appendString = '';
+      processString = processString.replaceAll(']', '');  //replaces all occurances of "]"
+      processString = processString.replaceAll("{", "");  //replaces all occurances of "{"
+      processString = processString.replaceAll("}", "");  //replaces all occurances of "}"
+      console.log('process String = ' + processString);
+      
+      processArray = processString.split(",");
+      console.log('processArray = ' + processArray);
+
+      //now, clear the processString
+      processString = '';
+      
+      stringSize = processArray.length;
+      console.log("stringSize = " + stringSize);
+
+      for (var i = 0; i < stringSize; i += 3) 
+      { 
+        x_mapped = (processArray[i]);  //this needs to scale the cross-point location (0 to 31, for example) to the pixel range of the canvas element
+        x_mapped = x_mapped * 25;  //have defined above that each sensor cross-point equals 25 pixels, so mult by 25 to feed to heatmaps.js
+        //console.log("x mapped = " + x_mapped);
+
+        y_mapped = (processArray[i+1]);  //this needs to scale the cross-point location (0 to 31, for example) to the pixel range of the canvas element
+        y_mapped = y_mapped * 25;  //have defined above that each sensor cross-point equals 25 pixels, so mult by 25 to feed to heatmaps.js
+        //console.log("y mapped = " + y_mapped);
+        
+        value_mapped = (processArray[i+2]);  //this needs to scale the cross-point location (0 to 31, for example) to the pixel range of the canvas element
+        //console.log("value mapped = " + value_mapped);
+
+        //radius_mapped = (value_mapped / 2000) * 50;  //this lets 50 be the radius when a/d is maxed out, and smaller with smaller values
+        //max = Math.max(max, value_mapped);  //don't want to do this here anymore since there are other items already in the point_array
+        var point = {
+          x:x_mapped,
+          y:y_mapped,
+          value:value_mapped
+          //value:1  //as the same coordinates are loaded more and more times, those datapoints will get highest value
+          //***but bec some of the noise points load a lot lot lot, AND to be able to show when move after standing, need to maybe refresh the drawing every 10 loops or something.  
+          //value:value_mapped,
+          //radius:radius_mapped
+          //try making the radius dependent on the value, so non-stepped noise points have a much smaller radius
+          //or make the radius incrementally larger each time the same value is loaded (it might do this already though) (at least for the mouse click example it does this already)
+        };
+        //console.log("point = " + point);        
+        point_array.push(point);
+        //only stores the point if x AND y are less than 9
+        //if (point.x < (9 * 25))  //this is for when scaler = 25
+        //{
+        //	if (point.y < (9 * 25))
+        //	{
+        //		point_array.push(point);  //only adds the point to point_array if x and y are between 1 and 8 (less than 9)
+        //	}	
+        //}
+      }	  //end of for (var i = 0; i < stringSize; i += 3) 
+
+      //console.log("point array = " + point_array);      
+      //do the fading history part here.  just fade the array evenly by the number of elements in it.  index 0 is oldest, index (length) is the newest
+      //max = point_array[0].value;  //seeds max with a value... what should be the smallest value
+      max = 0;  //seeds max with 0, to ensure that max is seeded with the smallest value possible
+      for (var j = 0; j < point_array.length; j++)
+      {
+        var fader = (j + 1) / point_array.length;  //if length = 10, at index 0 => 0/10 = 0; at index 2 => 2/10; at index 6 => 6/10=.6; at index 8 => 8/10=.8; at index 10=>1
+        //console.log(fader);
+        point_array[j].value = point_array[j].value * fader;	
+        //max = Math.max(max, point_array[j]);	
+        if (max < point_array[j].value) {
+          max = point_array[j].value;
+        }
+      }							
+      
+      console.log("max = " + max);
+      
+      var data = 
+      {
+        max: max,
+        data: point_array
+      };
+      heatmap.setData(data);
+      
+      //console.log("data = " + data);      
+      console.log("point array length = " + point_array.length);
+      
+      if (point_array.length > 1000)  //this starts dropping old items from the array after the size reaches 100 points
+      {				
+        point_array.splice(0, stringSize);  //this removes the number of elements just added to the array from the beginning of the array (shifts out from the beginning the number of elements just added to the end							
+      }
+      //can do a fading history with setData very easily by not clearing the history data every time, but by decreasing all the values each time (and delete off the oldest values that would be not showing up after many loops of gettting their values decreased)
+      //array.pop() removes the last value of the array
+      //point_array = point_array * 0.8;  //this will start fading older values so there will be a fading history
+    }
+
+	</script>
+
+</body>
+
+</html>
