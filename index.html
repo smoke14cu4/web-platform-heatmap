@@ -69,7 +69,23 @@
       blur: .90,
       //blur: .50,
       // backgroundColor with alpha so you can see through it
-      backgroundColor: 'rgba(0, 0, 58, 0.96)'
+      backgroundColor: 'rgba(0, 0, 58, 0.96)',  //blue
+      //backgroundColor: 'rgba(128, 0, 255, 1)',  //purplish
+      
+      gradient: {
+        '0.0': 'rgb(0, 0, 58)',       //blackish blue
+        '0.1': 'rgb(0, 0, 255)',      //blue
+        '0.2': 'rgb(128, 0, 255)',    //purple
+        '0.3': 'rgb(0, 128, 255)',    //greenish blue
+        '0.4': 'rgb(0, 255, 255)',    //aqua
+        '0.5': 'rgb(0, 255, 128)',    //blueish green
+        '0.6': 'rgb(0, 255, 0)',      //green
+        '0.7': 'rgb(128, 255, 0)',    //yellowish green
+        '0.8': 'rgb(255, 255, 0)',    //yellow
+        '0.9': 'rgb(255, 128, 0)',    //orange
+        '1.0': 'rgb(255, 0, 0)'       //red
+      }
+
     });
     var heatmapContainer = document.getElementById('heatmapContainerWrapper');
 		
