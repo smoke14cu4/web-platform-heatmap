@@ -91,24 +91,24 @@
         return device.gatt.connect();
       })
       .then(server => {
-        console.log('Getting Service...');
+        if (debug == 1) console.log('Getting Service...');
         return server.getPrimaryService(serviceUuid);
       })
       .then(service => {
-        console.log('Getting Characteristic...');
+        if (debug == 1) console.log('Getting Characteristic...');
         return service.getCharacteristic(characteristicUuid);
       })
       .then(characteristic => {
         myCharacteristic = characteristic;
         return myCharacteristic.startNotifications().then(_ => {
-          console.log('> Notifications started');
+          if (debug == 1) console.log('> Notifications started');
           //log("Connected to: " + deviceName);
           myCharacteristic.addEventListener('characteristicvaluechanged',
               handleNotifications);
         });
       })
       .catch(error => {
-        console.log('Argh! ' + error);
+        if (debug == 1) console.log('Argh! ' + error);
       });
     }
 
@@ -118,13 +118,13 @@
       {
         myCharacteristic.stopNotifications()
         .then(_ => {
-          console.log('> Notifications stopped');
+          if (debug == 1) console.log('> Notifications stopped');
           //log("Disconnected")
           myCharacteristic.removeEventListener('characteristicvaluechanged',
               handleNotifications);
         })
         .catch(error => {
-          console.log('Argh! ' + error);
+          if (debug == 1) console.log('Argh! ' + error);
         });
       }
     }
@@ -134,20 +134,25 @@
       let value = event.target.value;
       rcvString = new TextDecoder().decode(value);      
       
-      console.log(' Received: ' + rcvString);
+      if (debug == 1) console.log(' Received: ' + rcvString);
       
         //rcvString is the string of JSONish data....
         //prob do a string search... or just to a deal to make an array of strings with the { and } being the delimeters/separators to will get an array of x,y,z pairs, which is perfect for heatmaps.js
 
       
       appendString += rcvString;      
-      console.log('rcvString appended to appendString.  appendString is now:   ' + appendString);      
+      if (debug == 1) console.log('rcvString appended to appendString.  appendString is now:   ' + appendString);      
+
+
+      
+
 
       //call the function to parse in the rcvString data and populate the heatmap
-      processData();
+      //processData();
 
     }
-
+    var debug = 0;  //set to 1 to enable console.log debugging  //0 to not
+    var fadingHistory = 0;  //set to 1 to have fading history//0 to not
     var processString;
     var x_mapped = 0;
 		var y_mapped = 0;
@@ -170,16 +175,16 @@
       processString = processString.replaceAll(']', '');  //replaces all occurances of "]"
       processString = processString.replaceAll("{", "");  //replaces all occurances of "{"
       processString = processString.replaceAll("}", "");  //replaces all occurances of "}"
-      console.log('process String = ' + processString);
+      if (debug == 1) console.log('process String = ' + processString);
       
       processArray = processString.split(",");
-      console.log('processArray = ' + processArray);
+      if (debug == 1) console.log('processArray = ' + processArray);
 
       //now, clear the processString
       processString = '';
       
       stringSize = processArray.length;
-      console.log("stringSize = " + stringSize);
+      if (debug == 1) console.log("stringSize = " + stringSize);
 
       for (var i = 0; i < stringSize; i += 3) 
       { 
@@ -234,7 +239,7 @@
         }
       }							
       
-      console.log("max = " + max);
+      if (debug == 1) console.log("max = " + max);
       
       var data = 
       {
@@ -244,7 +249,7 @@
       heatmap.setData(data);
       
       //console.log("data = " + data);      
-      console.log("point array length = " + point_array.length);
+      if (debug == 1) console.log("point array length = " + point_array.length);
       
       if (point_array.length > 1000)  //this starts dropping old items from the array after the size reaches 100 points
       {				
