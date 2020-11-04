@@ -67,6 +67,7 @@
       maxOpacity: .6,
       radius: 50,
       blur: .90,
+      //blur: .50,
       // backgroundColor with alpha so you can see through it
       backgroundColor: 'rgba(0, 0, 58, 0.96)'
     });
@@ -154,17 +155,26 @@
       }
     }
 
-    var debug = 1;  //set to 1 to enable console.log debugging  //0 to not
+    var debug = 0;  //set to 1 to enable console.log debugging  //0 to not
     var fadingHistory = 0;  //set to 1 to have fading history//0 to not
     var fadingHistoryLength = 1000;  //length of the fading history array
     var processString;
-    var x_mapped = 0;
-		var y_mapped = 0;
-		var value_mapped = 0;
-		var radius_mapped = 0;
-		var max = 0;
+    var x_mapped;
+		var y_mapped;
+		var value_mapped;
+		var radius_mapped;
+		var max;
 		var point_array = [];
-    
+    var pointArrayLength;
+    /*
+    var point = {
+          x: 0,
+          y: 0,
+          value: 0
+          
+        };
+    */
+
     function processData()
     {
       //processString = appendString;  //copy the append string over to the process string for running thru processing
@@ -193,8 +203,8 @@
       
       //if (fadingHistory == 0) point_array = [];
       if (fadingHistory == 0) point_array.splice(0, point_array.length);
-
-      for (var i = 0; i < stringSize; i += 3) 
+      var i;
+      for (i = 0; i < stringSize; i += 3) 
       { 
         x_mapped = (processArray[i]);  //this needs to scale the cross-point location (0 to 31, for example) to the pixel range of the canvas element
         x_mapped = x_mapped * 25;  //have defined above that each sensor cross-point equals 25 pixels, so mult by 25 to feed to heatmaps.js
@@ -204,12 +214,17 @@
         y_mapped = y_mapped * 25;  //have defined above that each sensor cross-point equals 25 pixels, so mult by 25 to feed to heatmaps.js
         //console.log("y mapped = " + y_mapped);
         
-        value_mapped = (processArray[i+2]);  //this needs to scale the cross-point location (0 to 31, for example) to the pixel range of the canvas element
+        value_mapped = (processArray[i+2])/10;  //this needs to scale the cross-point location (0 to 31, for example) to the pixel range of the canvas element
         //console.log("value mapped = " + value_mapped);
 
         //radius_mapped = (value_mapped / 2000) * 50;  //this lets 50 be the radius when a/d is maxed out, and smaller with smaller values
         //max = Math.max(max, value_mapped);  //don't want to do this here anymore since there are other items already in the point_array
-        var point = {
+        
+        //point.x = x_mapped;
+        //point.y = y_mapped;
+        //point.value = value_mapped;
+        
+        let point = {
           x:x_mapped,
           y:y_mapped,
           value:value_mapped
@@ -220,6 +235,7 @@
           //try making the radius dependent on the value, so non-stepped noise points have a much smaller radius
           //or make the radius incrementally larger each time the same value is loaded (it might do this already though) (at least for the mouse click example it does this already)
         };
+        
         //console.log("point = " + point);        
         point_array.push(point);
         //only stores the point if x AND y are less than 9
@@ -234,16 +250,18 @@
 
       //console.log("point array = " + point_array);      
       //do the fading history part here.  just fade the array evenly by the number of elements in it.  index 0 is oldest, index (length) is the newest
+      pointArrayLength = point_array.length;
       //max = point_array[0].value;  //seeds max with a value... what should be the smallest value
       max = 0;  //seeds max with 0, to ensure that max is seeded with the smallest value possible
 
-      if (debug == 1) console.log("point_array.length = " + point_array.length);
-
-      for (var j = 0; j < point_array.length; j++)
+      if (debug == 1) console.log("pointArrayLength = " + pointArrayLength);
+      var j;
+      for (j = 0; j < pointArrayLength; j++)
       {
         if (fadingHistory == 1)
         {
-          var fader = (j + 1) / point_array.length;  //if length = 10, at index 0 => 0/10 = 0; at index 2 => 2/10; at index 6 => 6/10=.6; at index 8 => 8/10=.8; at index 10=>1
+          //var fader = (j + 1) / pointArrayLength;  //if length = 10, at index 0 => 0/10 = 0; at index 2 => 2/10; at index 6 => 6/10=.6; at index 8 => 8/10=.8; at index 10=>1
+          let fader = (j + 1) / pointArrayLength;  //if length = 10, at index 0 => 0/10 = 0; at index 2 => 2/10; at index 6 => 6/10=.6; at index 8 => 8/10=.8; at index 10=>1
           //console.log(fader);
           point_array[j].value = point_array[j].value * fader;	
         }
@@ -258,15 +276,20 @@
           //console.log(point_array[j].y);
           //console.log(point_array[j].value);
           //console.log(point_array[j].x + "  " + point_array[j].y + "  " + point_array[j].value);
-          console.log(point_array[j].x/25 + "  " + point_array[j].y/25 + "  " + point_array[j].value);
+          console.log(point_array[j].x/25 + "  " + point_array[j].y/25 + "  " + point_array[j].value + "  " + max);
         }
       }							
       
-      if (debug == 1) console.log("max = " + max);
+      if (debug == 1) console.log("max = " + max);      
       
+      //heatmap.addData(point_array);
+      //heatmap.setDataMax(max);
+
+      //max = max * 1.5;
       var data = 
       {
         max: max,
+        min: 0,
         data: point_array
       };
       heatmap.setData(data);
@@ -276,7 +299,7 @@
       
       if (fadingHistory == 1)
       {
-        if (point_array.length > fadingHistoryLength)  //this starts dropping old items from the array after the size reaches 100 points
+        if (pointArrayLength > fadingHistoryLength)  //this starts dropping old items from the array after the size reaches 100 points
         {				
           point_array.splice(0, stringSize);  //this removes the number of elements just added to the array from the beginning of the array (shifts out from the beginning the number of elements just added to the end							
         }
