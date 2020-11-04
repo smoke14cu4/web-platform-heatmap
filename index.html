@@ -235,6 +235,7 @@
       //do the fading history part here.  just fade the array evenly by the number of elements in it.  index 0 is oldest, index (length) is the newest
       //max = point_array[0].value;  //seeds max with a value... what should be the smallest value
       max = 0;  //seeds max with 0, to ensure that max is seeded with the smallest value possible
+      if (debug == 1) console.log("point_array.length = " + point_array.length);
       for (var j = 0; j < point_array.length; j++)
       {
         if (fadingHistory == 1)
@@ -247,6 +248,12 @@
         if (max < point_array[j].value)
         {
           max = point_array[j].value;
+        }
+        if (debug == 1)
+        {
+          console.log(point_array[j].x);
+          console.log(point_array[j].y);
+          console.log(point_array[j].value);
         }
       }							
       
