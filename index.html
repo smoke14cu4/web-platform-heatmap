@@ -199,6 +199,10 @@
     var min;
 		var point_array = [];
     var pointArrayLength;
+    var fromLow = 0;
+    var fromHigh = 1000;
+    var toLow = 0;
+    var toHigh = 100;
     /*
     var point = {
           x: 0,
@@ -247,7 +251,11 @@
         y_mapped = y_mapped * 25;  //have defined above that each sensor cross-point equals 25 pixels, so mult by 25 to feed to heatmaps.js
         //console.log("y mapped = " + y_mapped);
         
-        value_mapped = (processArray[i+2])/10;  //this needs to scale the cross-point location (0 to 31, for example) to the pixel range of the canvas element
+        //value_mapped = (processArray[i+2]);  //this needs to scale the cross-point location (0 to 31, for example) to the pixel range of the canvas element
+        value_mapped = (processArray[i+2] / 10);  //this needs to scale the cross-point location (0 to 31, for example) to the pixel range of the canvas element
+        //value_mapped = (value_mapped - fromLow)*(toHigh - toLow) / ((fromHigh - fromLow)+(toLow));
+        
+        //value_mapped = (processArray[i+2])/10;  //this needs to scale the cross-point location (0 to 31, for example) to the pixel range of the canvas element
         //console.log("value mapped = " + value_mapped);
 
         //radius_mapped = (value_mapped / 2000) * 50;  //this lets 50 be the radius when a/d is maxed out, and smaller with smaller values
@@ -286,7 +294,7 @@
       pointArrayLength = point_array.length;
       //max = point_array[0].value;  //seeds max with a value... what should be the smallest value
       max = 0;  //seeds max with 0, to ensure that max is seeded with the smallest value possible
-      min = 1000;
+      min = 900;
       if (debug == 1) console.log("pointArrayLength = " + pointArrayLength);
       var j;
       for (j = 0; j < pointArrayLength; j++)
@@ -322,19 +330,35 @@
       if (debug == 1) console.log("max = " + max);
       if (debug == 1) console.log("min = " + min);
       
+      fromLow = min;
+      toLow = 0      
+      fromHigh = max;
+      toHigh = 1;
+
+      var m;
+      for (m = 0; m < pointArrayLength; m++)
+      {
+        //value_mapped = (value_mapped - fromLow)*(toHigh - toLow) / ((fromHigh - fromLow)+(toLow));
+        point_array[m].value = (point_array[m].value - fromLow)*(toHigh - toLow) / ((fromHigh - fromLow)+(toLow));
+        if (debug == 1) console.log(point_array[m].x/25 + "  " + point_array[m].y/25 + "  " + point_array[m].value);
+      }
+
+
       //heatmap.addData(point_array);
       //heatmap.setDataMax(max);
 
       //max = max * 1.5;
       var data = 
       {
-        max: max,
-        min: min,
+        //max: max,
+        max: toHigh,
+        //min: min,
+        min: toLow,
         data: point_array
       };
       heatmap.setData(data);
-      heatmap.setDataMax(max);
-      heatmap.setDataMin(min);
+      //heatmap.setDataMax(max);
+      //heatmap.setDataMin(min);
       
       //console.log("data = " + data);      
       //if (debug == 1) console.log("point array length = " + point_array.length);
