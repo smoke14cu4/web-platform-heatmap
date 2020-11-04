@@ -66,8 +66,9 @@
       container: document.getElementById('heatmapContainer'),
       maxOpacity: .6,
       radius: 50,
-      blur: .90,
-      //blur: .50,
+      //blur: .90,
+      blur: 0.95,
+      //blur: .25,  //almost whole point is red
       // backgroundColor with alpha so you can see through it
       backgroundColor: 'rgba(0, 0, 58, 0.96)',  //blue
       //backgroundColor: 'rgba(128, 0, 255, 1)',  //purplish
@@ -85,7 +86,22 @@
         '0.9': 'rgb(255, 128, 0)',    //orange
         '1.0': 'rgb(255, 0, 0)'       //red
       }
-
+      
+      /*
+      gradient: {
+        '0.0': 'rgb(0, 0, 58)',       //blackish blue
+        '0.2': 'rgb(0, 0, 255)',      //blue
+        '0.3': 'rgb(128, 0, 255)',    //purple
+        '0.4': 'rgb(0, 128, 255)',    //greenish blue
+        '0.5': 'rgb(0, 255, 255)',    //aqua
+        '0.6': 'rgb(0, 255, 128)',    //blueish green
+        '0.7': 'rgb(0, 255, 0)',      //green
+        '0.75': 'rgb(128, 255, 0)',    //yellowish green
+        '0.8': 'rgb(255, 255, 0)',    //yellow
+        '0.85': 'rgb(255, 128, 0)',    //orange
+        '0.9': 'rgb(255, 0, 0)'       //red
+      }
+      */
     });
     var heatmapContainer = document.getElementById('heatmapContainerWrapper');
 		
@@ -171,7 +187,7 @@
       }
     }
 
-    var debug = 0;  //set to 1 to enable console.log debugging  //0 to not
+    var debug = 1;  //set to 1 to enable console.log debugging  //0 to not
     var fadingHistory = 0;  //set to 1 to have fading history//0 to not
     var fadingHistoryLength = 1000;  //length of the fading history array
     var processString;
@@ -180,6 +196,7 @@
 		var value_mapped;
 		var radius_mapped;
 		var max;
+    var min;
 		var point_array = [];
     var pointArrayLength;
     /*
@@ -269,7 +286,7 @@
       pointArrayLength = point_array.length;
       //max = point_array[0].value;  //seeds max with a value... what should be the smallest value
       max = 0;  //seeds max with 0, to ensure that max is seeded with the smallest value possible
-
+      min = 1000;
       if (debug == 1) console.log("pointArrayLength = " + pointArrayLength);
       var j;
       for (j = 0; j < pointArrayLength; j++)
@@ -282,21 +299,28 @@
           point_array[j].value = point_array[j].value * fader;	
         }
         //max = Math.max(max, point_array[j]);	
+        
         if (max < point_array[j].value)
         {
           max = point_array[j].value;
         }
-        if (debug == 1)
+        if (min > point_array[j].value)
         {
-          //console.log(point_array[j].x);
-          //console.log(point_array[j].y);
-          //console.log(point_array[j].value);
+          min = point_array[j].value;
+        }
+        
+        if (debug == 1)
+        {          
           //console.log(point_array[j].x + "  " + point_array[j].y + "  " + point_array[j].value);
-          console.log(point_array[j].x/25 + "  " + point_array[j].y/25 + "  " + point_array[j].value + "  " + max);
+          //console.log(point_array[j].x/25 + "  " + point_array[j].y/25 + "  " + point_array[j].value + "  " + max);
+          console.log(point_array[j].x/25 + "  " + point_array[j].y/25 + "  " + point_array[j].value);
         }
       }							
-      
-      if (debug == 1) console.log("max = " + max);      
+      //max = Math.max(max, point_array.value);
+      //max = Math.max.apply(null, point_array);
+      //min = Math.min.apply(null, point_array);
+      if (debug == 1) console.log("max = " + max);
+      if (debug == 1) console.log("min = " + min);
       
       //heatmap.addData(point_array);
       //heatmap.setDataMax(max);
@@ -305,10 +329,12 @@
       var data = 
       {
         max: max,
-        min: 0,
+        min: min,
         data: point_array
       };
       heatmap.setData(data);
+      heatmap.setDataMax(max);
+      heatmap.setDataMin(min);
       
       //console.log("data = " + data);      
       //if (debug == 1) console.log("point array length = " + point_array.length);
