@@ -138,14 +138,9 @@
       
       if (debug == 1) console.log(' Received: ' + rcvString);
       
-        //rcvString is the string of JSONish data....
-        //prob do a string search... or just to a deal to make an array of strings with the { and } being the delimeters/separators to will get an array of x,y,z pairs, which is perfect for heatmaps.js
-
-      
       appendString += rcvString;      
-      if (debug == 1) console.log('rcvString appended to appendString.  appendString is now:   ' + appendString);      
-
-      
+      if (debug == 1) console.log('rcvString appended to appendString.  appendString is now:   ' + appendString);
+            
       //search appendString for the end of line characters CRLF  (\r\n)
       eolIndex = appendString.indexOf("\r\n");  //returns -1 if they're not there, or the index if they are
       if (eolIndex >= 0)
@@ -154,17 +149,14 @@
         if (debug == 1) console.log("transferString = " + transferString);
         appendString = appendString.substring(eolIndex+2);
         if (debug == 1) console.log("appendString = " + appendString);
+        processData();
 
       }
-
-
-
-      //call the function to parse in the rcvString data and populate the heatmap
-      //processData();
-
     }
+
     var debug = 1;  //set to 1 to enable console.log debugging  //0 to not
     var fadingHistory = 0;  //set to 1 to have fading history//0 to not
+    var fadingHistoryLength = 1000;  //length of the fading history array
     var processString;
     var x_mapped = 0;
 		var y_mapped = 0;
@@ -181,13 +173,14 @@
       //processString = processString.replace(//{/g, '');  //replaces all occurances of "{"
       //processString = processString.replace(//}/g, '');  //replaces all occurances of "}"
 
-      processString = appendString.replaceAll('[', '');  //replaces all occurances of "["
+      //processString = appendString.replaceAll('[', '');  //replaces all occurances of "["
+      processString = transferString.replaceAll('[', '');  //replaces all occurances of "["
       //clears the appendString for next notification:
-      appendString = '';
+      //appendString = '';
       processString = processString.replaceAll(']', '');  //replaces all occurances of "]"
       processString = processString.replaceAll("{", "");  //replaces all occurances of "{"
       processString = processString.replaceAll("}", "");  //replaces all occurances of "}"
-      if (debug == 1) console.log('process String = ' + processString);
+      if (debug == 1) console.log('processString = ' + processString);
       
       processArray = processString.split(",");
       if (debug == 1) console.log('processArray = ' + processArray);
@@ -244,11 +237,15 @@
       max = 0;  //seeds max with 0, to ensure that max is seeded with the smallest value possible
       for (var j = 0; j < point_array.length; j++)
       {
-        var fader = (j + 1) / point_array.length;  //if length = 10, at index 0 => 0/10 = 0; at index 2 => 2/10; at index 6 => 6/10=.6; at index 8 => 8/10=.8; at index 10=>1
-        //console.log(fader);
-        point_array[j].value = point_array[j].value * fader;	
+        if (fadingHistory == 1)
+        {
+          var fader = (j + 1) / point_array.length;  //if length = 10, at index 0 => 0/10 = 0; at index 2 => 2/10; at index 6 => 6/10=.6; at index 8 => 8/10=.8; at index 10=>1
+          //console.log(fader);
+          point_array[j].value = point_array[j].value * fader;	
+        }
         //max = Math.max(max, point_array[j]);	
-        if (max < point_array[j].value) {
+        if (max < point_array[j].value)
+        {
           max = point_array[j].value;
         }
       }							
@@ -265,9 +262,12 @@
       //console.log("data = " + data);      
       if (debug == 1) console.log("point array length = " + point_array.length);
       
-      if (point_array.length > 1000)  //this starts dropping old items from the array after the size reaches 100 points
-      {				
-        point_array.splice(0, stringSize);  //this removes the number of elements just added to the array from the beginning of the array (shifts out from the beginning the number of elements just added to the end							
+      if (fadingHistory == 1)
+      {
+        if (point_array.length > fadingHistoryLength)  //this starts dropping old items from the array after the size reaches 100 points
+        {				
+          point_array.splice(0, stringSize);  //this removes the number of elements just added to the array from the beginning of the array (shifts out from the beginning the number of elements just added to the end							
+        }
       }
       //can do a fading history with setData very easily by not clearing the history data every time, but by decreasing all the values each time (and delete off the oldest values that would be not showing up after many loops of gettting their values decreased)
       //array.pop() removes the last value of the array
