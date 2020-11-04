@@ -76,6 +76,8 @@
     var deviceName;    
     var rcvString;    
     var appendString = '';
+    var transferString;
+    eolIndex = 0;  //var to hold the end of line index in the appendString
     
 
     //the connect() function gets called when click the button to connect
@@ -143,15 +145,25 @@
       appendString += rcvString;      
       if (debug == 1) console.log('rcvString appended to appendString.  appendString is now:   ' + appendString);      
 
-
       
+      //search appendString for the end of line characters CRLF  (\r\n)
+      eolIndex = appendString.indexOf("\r\n");  //returns -1 if they're not there, or the index if they are
+      if (eolIndex >= 0)
+      {
+        transferString = appendString.substring(0, eolIndex);
+        if (debug == 1) console.log("transferString = " + transferString);
+        appendString = appendString.substring(eolIndex+2);
+        if (debug == 1) console.log("appendString = " + appendString);
+
+      }
+
 
 
       //call the function to parse in the rcvString data and populate the heatmap
       //processData();
 
     }
-    var debug = 0;  //set to 1 to enable console.log debugging  //0 to not
+    var debug = 1;  //set to 1 to enable console.log debugging  //0 to not
     var fadingHistory = 0;  //set to 1 to have fading history//0 to not
     var processString;
     var x_mapped = 0;
@@ -181,10 +193,12 @@
       if (debug == 1) console.log('processArray = ' + processArray);
 
       //now, clear the processString
-      processString = '';
+      //processString = '';
       
       stringSize = processArray.length;
       if (debug == 1) console.log("stringSize = " + stringSize);
+      
+      if (fadingHistory == 0) point_array = [];
 
       for (var i = 0; i < stringSize; i += 3) 
       { 
