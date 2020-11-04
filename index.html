@@ -191,7 +191,8 @@
       stringSize = processArray.length;
       if (debug == 1) console.log("stringSize = " + stringSize);
       
-      if (fadingHistory == 0) point_array = [];
+      //if (fadingHistory == 0) point_array = [];
+      if (fadingHistory == 0) point_array.splice(0, point_array.length);
 
       for (var i = 0; i < stringSize; i += 3) 
       { 
@@ -235,7 +236,9 @@
       //do the fading history part here.  just fade the array evenly by the number of elements in it.  index 0 is oldest, index (length) is the newest
       //max = point_array[0].value;  //seeds max with a value... what should be the smallest value
       max = 0;  //seeds max with 0, to ensure that max is seeded with the smallest value possible
+
       if (debug == 1) console.log("point_array.length = " + point_array.length);
+
       for (var j = 0; j < point_array.length; j++)
       {
         if (fadingHistory == 1)
@@ -254,7 +257,8 @@
           //console.log(point_array[j].x);
           //console.log(point_array[j].y);
           //console.log(point_array[j].value);
-          console.log(point_array[j].x + "  " + point_array[j].y + "  " + point_array[j].value);
+          //console.log(point_array[j].x + "  " + point_array[j].y + "  " + point_array[j].value);
+          console.log(point_array[j].x/25 + "  " + point_array[j].y/25 + "  " + point_array[j].value);
         }
       }							
       
@@ -268,7 +272,7 @@
       heatmap.setData(data);
       
       //console.log("data = " + data);      
-      if (debug == 1) console.log("point array length = " + point_array.length);
+      //if (debug == 1) console.log("point array length = " + point_array.length);
       
       if (fadingHistory == 1)
       {
